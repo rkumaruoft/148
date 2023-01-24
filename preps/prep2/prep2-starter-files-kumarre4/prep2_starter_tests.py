@@ -25,7 +25,7 @@ We suggest you also add your own tests to practice writing tests and
 to be confident your code is correct.
 
 When writing a test case, make sure you create a new function, with its
-name starting with "test_". For example:
+name starting with "tsest_". For example:
 
 def test_my_test_case():
     # Your test here
