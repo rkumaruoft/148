@@ -1,0 +1,11 @@
+hypothesis
+pytest
+pygame
+matplotlib
+Flask
+mido
+plotly
+pandas
+numpy
+chess
+python-ta>=2.4.0
