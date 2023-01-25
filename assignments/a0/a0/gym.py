@@ -171,7 +171,11 @@ class Gym:
         >>> ac.add_instructor(diane)
         True
         """
+        if instructor.get_id() in self._instructors:
+            return False
 
+        self._instructors[instructor.get_id()] = instructor
+        return True
 
     def add_workout_class(self, workout_class: WorkoutClass) -> bool:
         """Add a <workout_class> to this Gym iff the <workout_class> does not
@@ -184,7 +188,11 @@ class Gym:
         >>> ac.add_workout_class(kickboxing)
         True
         """
-        # TODO: implement this method!
+        if workout_class.name in self._workouts:
+            return False
+
+        self._workouts[workout_class.name] = workout_class
+        return True
 
     def add_room(self, name: str, capacity: int) -> bool:
         """Add a room with <name> and <capacity> to this Gym iff there is not
@@ -196,7 +204,10 @@ class Gym:
         >>> ac.add_room('Dance Studio', 50)
         True
         """
-        # TODO: implement this method!
+        if name in self._room_capacities:
+            return False
+        self._room_capacities[name] = capacity
+        return True
 
     def schedule_workout_class(self, time_point: datetime, room_name: str,
                                workout_name: str, instr_id: int) -> bool:
@@ -245,6 +256,9 @@ class Gym:
         True
         """
         # TODO: implement this method!
+
+        if time_point not in self._schedule:
+            self._schedule[time_point] = dict[room_name, ]
 
     def register(self, time_point: datetime, client: str, workout_name: str) \
             -> bool:
@@ -596,6 +610,16 @@ class Instructor:
         Return the unique _id of this instructor
         """
         return self._id
+
+    def __eq__(self, other) -> bool:
+        """
+        return true if this instructor has the same name as <other>
+        >>> a = Instructor(1,'Diane')
+        >>> b = Instructor(2,'Diane')
+        >>> a == b
+        True
+        """
+        return self.name == other.name
 
 
 def gym_from_yaml(filename: str) -> Gym:
