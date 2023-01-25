@@ -57,10 +57,11 @@ class Employee:
     === Public attributes ===
     id_: This employee's ID number.
     name: This employee's name.
+    _total_paid: Total amount paid to the employee
     """
     id_: int
     name: str
-    total_paid: int
+    _total_paid: int
 
     def __init__(self, id_: int, name: str) -> None:
         """Initialize this employee.
@@ -70,7 +71,7 @@ class Employee:
         """
         self.id_ = id_
         self.name = name
-        self.total_paid = 0
+        self._total_paid = 0
 
     def get_monthly_payment(self) -> float:
         """Return the amount that this Employee should be paid in one month.
@@ -85,7 +86,7 @@ class Employee:
         (Assume this is called once per month.)
         """
         payment = self.get_monthly_payment()
-        self.total_paid += payment
+        self._total_paid += payment
         print(f'An employee was paid {payment} on {pay_date}.')
 
     def total_pay(self) -> float:
@@ -101,7 +102,7 @@ class Employee:
         >>> e.total_pay()
         300.0
         """
-        return self.total_paid
+        return self._total_paid
 
 
 class SalariedEmployee(Employee):
@@ -230,7 +231,7 @@ class Company:
         """
         payroll_sum = 0
         for emp in self.employees:
-            payroll_sum += emp.total_paid
+            payroll_sum += emp.total_pay()
         return payroll_sum
 
 

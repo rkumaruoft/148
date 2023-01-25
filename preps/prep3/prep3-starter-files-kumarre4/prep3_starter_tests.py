@@ -38,23 +38,22 @@ from prep3 import SalariedEmployee, HourlyEmployee, Company
 # Part 3
 # In this part, you will be writing your own test cases from scratch.
 # You must implement *at least* 2 more test cases to test your code.
-# 
-# These test cases must be in their own functions, their names must start 
+#
+# These test cases must be in their own functions, their names must start
 # with "test_", and the test names must be unique.
 #
-# These test cases must pass on a working version of the prep3 code 
+# These test cases must pass on a working version of the prep3 code
 # (i.e. a working version of SalariedEmployee, HourlyEmployee, Company) and
 # must create at least one SalariedEmployee or HourlyEmployee.
 #
 # You must NOT access any private variables.
-#       
+#
 # There are no other requirements for the test cases.
 #
 # You can verify whether your test cases are acceptable by running the
 # automated tests on MarkUs.
 ################################################################################
 # TODO: Implement *at least* 2 more test cases to test your code.
-
 
 
 # === Sample test cases below ===
@@ -78,6 +77,28 @@ def test_total_payroll_mixed() -> None:
     assert my_corp.total_payroll() == 600.25
 
 
+@given(floats(0, allow_nan=False, allow_infinity=False, allow_subnormal=False),
+       floats(min_value=0, max_value=160, allow_nan=False,
+              allow_infinity=False, allow_subnormal=False))
+def test_total_pay_hourly_employee(i: float, j: float) -> None:
+    """
+    Test that the pay function works for an hourly employee for any positive
+    float; pay i and hours j
+    """
+    e = HourlyEmployee(2, 'Freddy Kruger', i, j)
+    e.pay(date.today())
+    assert e.total_pay() == round(i * j, 2)
+
+
+@given(floats(0, allow_nan=False, allow_infinity=False, allow_subnormal=False))
+def test_zero_pay(i: float) -> None:
+    my_corp = Company([SalariedEmployee(24, 'Gilbert the cat', i),
+                       HourlyEmployee(25, 'Chairman Meow', 500.25, 0.0)])
+    my_corp.pay_all(date.today())
+    assert my_corp.total_payroll() == round(i / 12, 2)
+
+
 if __name__ == '__main__':
     import pytest
+
     pytest.main(['prep3_starter_tests.py'])
