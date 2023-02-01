@@ -141,8 +141,6 @@ def remove_all_but_one(queue: Queue) -> None:
 #
 # You are not required to fix the bug, although you may do so if you'd like.
 ################################################################################
-# TODO: Add a test case that will fail this buggy implementation of add_in_order
-#       to prep4_starter_tests.py
 def add_in_order(stack: Stack, lst: list) -> None:
     """
     Add all items in <lst> to <stack>, so that when items are removed from

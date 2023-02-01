@@ -69,6 +69,29 @@ class WorkoutClass:
         # Make a copy of the list to avoid aliasing
         return self._required_certificates[:]
 
+    def is_instructor_qualified(self, inst: Instructor) -> bool:
+        """
+        Returns true if the given instructor <inst> is qualified to
+        teach this workout class
+        >>> workout_class = WorkoutClass('Kickboxing', ['Strength Training'])
+        >>> a = Instructor(1,'abc')
+        >>> a.add_certificate('Strength Training')
+        True
+        >>> workout_class.is_instructor_qualified(a)
+        True
+        """
+        while '' in self._required_certificates:
+            self._required_certificates.remove('')
+
+        if len(self._required_certificates) == 0:
+            return True
+
+        for cert1 in self._required_certificates:
+            for cert2 in inst.get_certificates():
+                if cert1 == cert2:
+                    return True
+        return False
+
     def __eq__(self, other: Any) -> bool:
         """Return True iff this WorkoutClass is equal to <other>.
 
@@ -147,8 +170,8 @@ class Gym:
     _instructors: dict[int, Instructor]
     _workouts: dict[str, WorkoutClass]
     _room_capacities: dict[str, int]
-    _schedule: dict[datetime,
-    dict[str, tuple[Instructor, WorkoutClass, list[str]]]]
+    _schedule: (
+        dict[datetime, dict[str, tuple[Instructor, WorkoutClass, list[str]]]])
 
     def __init__(self, gym_name: str) -> None:
         """Initialize a new Gym with <name>. Initially, this gym has no
@@ -159,6 +182,10 @@ class Gym:
         'Athletic Centre'
         """
         self.name = gym_name
+        self._instructors = {}
+        self._workouts = {}
+        self._room_capacities = {}
+        self._schedule = {}
 
     def add_instructor(self, instructor: Instructor) -> bool:
         """Add a new <instructor> to this Gym's roster iff the <instructor> does
@@ -255,10 +282,30 @@ class Gym:
         tap.name, diane.get_id())
         True
         """
-        # TODO: implement this method!
+        this_tuple = (self._instructors[instr_id],
+                      self._workouts[workout_name],
+                      [])
+
+        # instructor is not qualified
+        if not this_tuple[1].is_instructor_qualified(this_tuple[0]):
+            return False
 
         if time_point not in self._schedule:
-            self._schedule[time_point] = dict[room_name, ]
+            self._schedule[time_point] = {room_name: this_tuple}
+            return True
+        else:
+            # instructor is busy
+            for room in self._schedule[time_point]:
+                if self._schedule[time_point][room][0].get_id() == instr_id:
+                    return False
+            # room already exists for that timepoint
+            if room_name in self._schedule[time_point]:
+                return False
+            else:
+                # add a new workout class with a new instructor
+                # at this time in schedule
+                self._schedule[time_point][room_name] = this_tuple
+                return True
 
     def register(self, time_point: datetime, client: str, workout_name: str) \
             -> bool:
@@ -297,7 +344,27 @@ class Gym:
         >>> ac.register(sep_9_2022_12_00, 'Philip', 'Boot Camp')
         False
         """
-        # TODO: implement this method!
+        rooms_to_add = []
+        for room in self._schedule[time_point]:
+            # client is already registered for another class at this time
+            if client in self._schedule[time_point][room][2]:
+                return False
+            if self._schedule[time_point][room][1].name == workout_name:
+                if (self._room_capacities[room]
+                        > len(self._schedule[time_point][room][2])):
+                    rooms_to_add.append(room)
+
+        most_in = ''
+        for r1 in rooms_to_add:
+            for r2 in rooms_to_add:
+                if self._room_capacities[r1] >= self._room_capacities[r2]:
+                    most_in = r1
+
+        if most_in == '':
+            return False
+        else:
+            self._schedule[time_point][most_in][2].append(client)
+            return True
 
     def instructor_hours(self, time1: datetime, time2: datetime) -> \
             dict[int, int]:
@@ -586,7 +653,7 @@ class Instructor:
         >>> a = Instructor(1, 'abc')
         >>> a.name
         'abc'
-        >>>a._id
+        >>> a._id
         1
         """
         self.name = name
@@ -604,6 +671,18 @@ class Instructor:
         """
         if new_certificate not in self._certificates:
             self._certificates.append(new_certificate)
+            return True
+        return False
+
+    def get_certificates(self) -> list[str]:
+        """
+        return all the certificates acquired by this instructor
+        >>> a = Instructor(1,'abc')
+        >>> a.add_certificate('Physical4')
+        >>> a.get_certificates()
+        ['Physical4']
+        """
+        return self._certificates[:]
 
     def get_id(self) -> int:
         """
