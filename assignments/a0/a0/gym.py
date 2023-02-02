@@ -404,7 +404,14 @@ class Gym:
         >>> ac.instructor_hours(t1, t2) == {1: 2, 2: 0}
         True
         """
-        # TODO: implement this method!
+        instructor_dict = {}
+        for inst in self._instructors:
+            instructor_dict[inst] = 0
+        for tst in self._schedule:
+            if time1 <= tst <= time2:
+                for room in self._schedule[tst]:
+                    instructor_dict[self._schedule[tst][room][0].get_id()] += 1
+        return instructor_dict
 
     def payroll(self, time1: datetime, time2: datetime, base_rate: float) \
             -> list[tuple[int, str, int, float]]:
@@ -451,7 +458,19 @@ class Gym:
         >>> ac.payroll(t1, t2, 25.0)
         [(1, 'Diane', 1, 26.5), (2, 'David', 0, 0.0)]
         """
-        # TODO: implement this method!
+        ret_lst = []
+        hours_dict = self.instructor_hours(time1, time2)
+
+        for inst_id in hours_dict:
+            pay = (base_rate + BONUS_RATE *
+                   len(self._instructors[inst_id].get_certificates())) \
+                  * hours_dict[inst_id]
+            ret_lst.append((inst_id,
+                            self._instructors[inst_id].name,
+                            hours_dict[inst_id],
+                            pay))
+        ret_lst.sort()
+        return ret_lst
 
     def _is_instructor_name_unique(self, instructor: Instructor) -> bool:
         """Return True iff the name of <instructor> is used by <= 1 instructor
@@ -474,7 +493,11 @@ class Gym:
         >>> ac._is_instructor_name_unique(third_hire)
         True
         """
-        # TODO: implement this method!
+        same_name = 0
+        for inst in self._instructors:
+            if self._instructors[inst].name == instructor.name:
+                same_name += 1
+        return same_name <= 1
 
     def offerings_at(self, time_point: datetime) -> list[dict[str, str | int]]:
         """Return a list of dictionaries, each representing a workout offered
@@ -616,7 +639,14 @@ class Gym:
         >>> ac == ac2
         True
         """
-        # TODO: implement this method!
+        if isinstance(other, Gym):
+            other_gym = Gym(other)
+            return self.name == other_gym.name and \
+                self._instructors == other_gym._instructors and \
+                self._workouts == other_gym._workouts and \
+                self._schedule == other_gym._schedule and \
+                self._room_capacities == other_gym._room_capacities
+        return False
 
     def to_webpage(self, filename: str = 'schedule.html') -> None:
         """Create a simple html webpage from data exported by
@@ -693,12 +723,14 @@ class Instructor:
     def __eq__(self, other) -> bool:
         """
         return true if this instructor has the same name as <other>
+        and the same id as other
         >>> a = Instructor(1,'Diane')
         >>> b = Instructor(2,'Diane')
         >>> a == b
         True
         """
-        return self.name == other.name
+        if isinstance(other, Instructor):
+            return self.name == other.name
 
 
 def gym_from_yaml(filename: str) -> Gym:
