@@ -462,9 +462,9 @@ class Gym:
         hours_dict = self.instructor_hours(time1, time2)
 
         for inst_id in hours_dict:
-            pay = (base_rate + BONUS_RATE *
-                   len(self._instructors[inst_id].get_certificates())) \
-                  * hours_dict[inst_id]
+            pay = ((base_rate + BONUS_RATE
+                   * len(self._instructors[inst_id].get_certificates()))
+                   * hours_dict[inst_id])
             ret_lst.append((inst_id,
                             self._instructors[inst_id].name,
                             hours_dict[inst_id],
@@ -568,7 +568,28 @@ class Gym:
         ... ]
         True
         """
-        # TODO: implement this method!
+        ret_lst = []
+        if time_point in self._schedule:
+            rooms = list(self._schedule[time_point].keys())
+            rooms.sort()
+            for room in rooms:
+                inst = self._schedule[time_point][room][0]
+                if self._is_instructor_name_unique(inst):
+                    name = inst.name
+                else:
+                    name = f'{inst.name} ({inst.get_id()})'
+                this_dict = create_offering_dict(
+                    time_point.strftime('%A') + ', ' + str(time_point.date()),
+                    time_point.strftime('%H:%M'),
+                    self._schedule[time_point][room][1].name,
+                    room,
+                    len(self._schedule[time_point][room][2]),
+                    (self._room_capacities[room]
+                     - len(self._schedule[time_point][room][2])),
+                    name
+                )
+                ret_lst.append(this_dict)
+        return ret_lst
 
     def to_schedule_list(self, week: datetime = None) \
             -> list[dict[str, str | int]]:
@@ -626,7 +647,27 @@ class Gym:
         ... ]
         True
         """
-        # TODO: implement this method!
+        ret_lst = []
+        time_lst = []
+
+        if week is None:
+            time_lst = list(self._schedule.keys())
+        else:
+            for t in list(self._schedule.keys()):
+                if in_week(t, week):
+                    time_lst.append(t)
+
+        time_lst.sort()
+        for time in time_lst:
+            for obj in self.offerings_at(time):
+                ret_lst.append(obj)
+
+        for i in range(len(ret_lst) - 1):
+            if (ret_lst[i]["Date"] == ret_lst[i + 1]["Date"]
+                    and ret_lst[i]["Time"] == ret_lst[i + 1]["Time"]):
+                if ret_lst[i]["Room"] > ret_lst[i + 1]["room"]:
+                    ret_lst[i], ret_lst[i + 1] = ret_lst[i + 1], ret_lst[i]
+        return ret_lst
 
     def __eq__(self, other: Any) -> bool:
         """Return True iff this Gym is equal to <other>.
@@ -640,12 +681,11 @@ class Gym:
         True
         """
         if isinstance(other, Gym):
-            other_gym = Gym(other)
-            return self.name == other_gym.name and \
-                self._instructors == other_gym._instructors and \
-                self._workouts == other_gym._workouts and \
-                self._schedule == other_gym._schedule and \
-                self._room_capacities == other_gym._room_capacities
+            return (self.name == other.name
+                    and self._instructors == other._instructors
+                    and self._workouts == other._workouts
+                    and self._schedule == other._schedule
+                    and self._room_capacities == other._room_capacities)
         return False
 
     def to_webpage(self, filename: str = 'schedule.html') -> None:
@@ -690,7 +730,7 @@ class Instructor:
         self._id = identification
         self._certificates = []
 
-    def add_certificate(self, new_certificate: str) -> None:
+    def add_certificate(self, new_certificate: str) -> bool:
         """
         Add a new certificate <new_certificate> to certificate list
         <_certificates> for this instructor
@@ -720,7 +760,7 @@ class Instructor:
         """
         return self._id
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: Any) -> bool:
         """
         return true if this instructor has the same name as <other>
         and the same id as other
@@ -731,6 +771,7 @@ class Instructor:
         """
         if isinstance(other, Instructor):
             return self.name == other.name
+        return False
 
 
 def gym_from_yaml(filename: str) -> Gym:
