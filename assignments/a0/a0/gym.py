@@ -662,11 +662,6 @@ class Gym:
             for obj in self.offerings_at(time):
                 ret_lst.append(obj)
 
-        for i in range(len(ret_lst) - 1):
-            if (ret_lst[i]["Date"] == ret_lst[i + 1]["Date"]
-                    and ret_lst[i]["Time"] == ret_lst[i + 1]["Time"]):
-                if ret_lst[i]["Room"] > ret_lst[i + 1]["room"]:
-                    ret_lst[i], ret_lst[i + 1] = ret_lst[i + 1], ret_lst[i]
         return ret_lst
 
     def __eq__(self, other: Any) -> bool:
@@ -704,10 +699,10 @@ class Instructor:
     """
     An instructor that has different certifications to teach classes in a gym
 
-    ===Public Attributes===
+    === Public Attributes ===
     name: The name of the instructor
 
-    ===Private Attributes===
+    === Private Attributes ===
     _id: An id that is unique for every instructor
     _certificates: List of all the certificated acquired by this instructor
     """
@@ -736,6 +731,7 @@ class Instructor:
         <_certificates> for this instructor
         >>> a = Instructor(1,'abc')
         >>> a.add_certificate('Physical4')
+        True
         >>> a._certificates
         ['Physical4']
         """
@@ -749,6 +745,7 @@ class Instructor:
         return all the certificates acquired by this instructor
         >>> a = Instructor(1,'abc')
         >>> a.add_certificate('Physical4')
+        True
         >>> a.get_certificates()
         ['Physical4']
         """
@@ -888,7 +885,6 @@ if __name__ == '__main__':
         # Python console instead:
         'output-format': 'python_ta.reporters.ColorReporter'
     })
-    # import doctest
-    # doctest.testmod()
-    #
-    # html_and_payroll_demo()
+    import doctest
+    doctest.testmod()
+    html_and_payroll_demo()
