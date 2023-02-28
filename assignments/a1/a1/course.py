@@ -85,7 +85,6 @@ class Student:
         same id as <question> and that answer is a valid answer for <question>.
         """
         if question.id in self._answers:
-            print(type(question))
             return question.validate_answer(self._answers[question.id])
         else:
             return False

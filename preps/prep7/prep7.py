@@ -120,7 +120,6 @@ def max_length(obj: Union[int, list]) -> int:
         return 0
 
 
-
 if __name__ == '__main__':
     import doctest
     doctest.testmod()

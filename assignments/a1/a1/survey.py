@@ -205,19 +205,28 @@ class YesNoQuestion(MultipleChoiceQuestion):
     text: the text of this question
 
     === Private Attributes ===
-
+    _answer_set : set of answers for a YesNo question
     === Representation Invariants ===
     text is not the empty string
     """
+    _answer_set: set
 
     def __init__(self, id_: int, text: str) -> None:
         """Initialize a question with the text <text> and id <id>.
         """
+        self._answer_set = {True, False}
         MultipleChoiceQuestion.__init__(self, id_, text, ['Yes', 'No'])
+
+    def validate_answer(self, answer: Answer) -> bool:
+        """Return True iff <answer> is a valid answer to this question.
+
+        An answer is valid if its content is one of the answer options for this
+        question.
+        """
+        return answer.content in self._answer_set
 
 
 class CheckboxQuestion(MultipleChoiceQuestion):
-    # TODO: make this a child class of another class defined in this file
     """A question whose answers can be one or more of several options
 
     === Public Attributes ===
@@ -225,8 +234,6 @@ class CheckboxQuestion(MultipleChoiceQuestion):
     text: the text of this question
 
     === Private Attributes ===
-    TODO: Describe any private attributes you create here
-
     === Representation Invariants ===
     text is not the empty string
     """
@@ -271,7 +278,10 @@ class CheckboxQuestion(MultipleChoiceQuestion):
         """
         set1 = set(answer1.content)
         set2 = set(answer2.content)
-        return len(set1.intersection(set2)) / len(set1 & set2)
+        if len(set1.union(set2)) != 0:
+            return len(set1.intersection(set2)) / len(set1.union(set2))
+        else:
+            return 1.0
 
 
 class Answer:

@@ -50,17 +50,17 @@ class Criterion:
         Each implementation of this abstract class will measure satisfaction of
         a criterion differently.
         """
-        # TODO: implement this method!
+        for ans in answers:
+            if not ans.is_valid(question):
+                raise InvalidAnswerError
 
 
-class HomogeneousCriterion:
-    # TODO: make this a child class of another class defined in this file
+class HomogeneousCriterion(Criterion):
     """A criterion used to evaluate the quality of a group based on the group
     members' answers for a given question.
 
     This criterion gives a higher score to answers that are more similar.
     """
-
     def score_answers(self, question: Question, answers: list[Answer]) -> float:
         """Return a score between 0.0 and 1.0 indicating how similar the
         answers in <answers> are.
@@ -83,11 +83,22 @@ class HomogeneousCriterion:
         Preconditions:
             - len(answers) > 0
         """
-        # TODO: implement this method or remove it (to inherit it as is)
+
+        Criterion.score_answers(self, question, answers)
+
+        if len(answers) == 1:
+            return 1.0
+
+        total_similarity = 0
+        for i in range(len(answers)):
+            for j in range(i+1, len(answers)):
+                total_similarity += question.get_similarity(answers[i],
+                                                            answers[j])
+
+        return total_similarity/len(answers)
 
 
-class HeterogeneousCriterion:
-    # TODO: make this a child class of another class defined in this file
+class HeterogeneousCriterion(HomogeneousCriterion):
     """A criterion used to evaluate the quality of a group based on the group
     members' answers for a given question.
 
@@ -116,10 +127,11 @@ class HeterogeneousCriterion:
         Preconditions:
             - len(answers) > 0
         """
-        # TODO: implement this method or remove it (to inherit it as is)
+        average = HomogeneousCriterion.score_answers(self, question, answers)
+        return 1.0 - average
 
 
-class LonelyMemberCriterion:
+class LonelyMemberCriterion(Criterion):
     # TODO: make this a child class of another class defined in this file
     """A criterion used to measure the quality of a group of students
     according to the group members' answers to a question.
@@ -149,7 +161,20 @@ class LonelyMemberCriterion:
         Preconditions:
             - len(answers) > 0
         """
-        # TODO: implement this method or remove it (to inherit it as is)
+        Criterion.score_answers(self, question, answers)
+
+        if len(answers) == 1:
+            return 1.0
+
+        for i in range(len(answers)):
+            is_unique = True
+            for j in range(i + 1, len(answers)):
+                if question.get_similarity(answers[i],
+                                           answers[j]) == 1.0:
+                    is_unique = False
+            if is_unique:
+                return 0.0
+        return 1.0
 
 
 if __name__ == '__main__':
