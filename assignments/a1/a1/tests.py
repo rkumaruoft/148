@@ -80,7 +80,7 @@ class TestCourseClass:
 ###############################################################################
 # Task 4 Test cases
 ###############################################################################
-class TestYesNoQuestion:
+class TestQuestionClass:
 
     def test_validate_answer(self) -> None:
         """
@@ -132,7 +132,7 @@ class TestAnswerClass:
     def test_is_valid_multiple_choice(self) -> None:
         """
         Test that is_valid returns true for a valid answer to a
-         MultipleChoiceQuestion
+        MultipleChoiceQuestion
         """
         ques = MultipleChoiceQuestion(0, 'How are you?',
                                       ['Good', 'Great', 'Okay'])
@@ -153,7 +153,7 @@ class TestAnswerClass:
 ###############################################################################
 # Task 6 Test cases
 ###############################################################################
-class TestHomogeneousClass:
+class TestCriterionClass:
     def test_single_answer(self) -> None:
         """
         Test that the score_answer returns 1.0 for only one valid answer in

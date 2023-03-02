@@ -43,6 +43,7 @@ def test_max_length_empty() -> None:
 def test_max_length_ints() -> None:
     assert max_length([1, 2, 3, 4, 5, 6]) == 6
 
+
 # Below are provided sample test cases for your use. You are encouraged
 # to add additional test cases (in addition to the ones required above.)
 # WARNING: THIS IS AN EXTREMELY INCOMPLETE SET OF TESTS!

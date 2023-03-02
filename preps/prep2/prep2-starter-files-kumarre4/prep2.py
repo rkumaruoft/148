@@ -29,7 +29,6 @@ Make sure to look at that file and complete the TODO there as well.
 from random import randint
 from datetime import date
 
-
 ################################################################################
 # Part 1
 # In this part of the prep, you will be implementing a Spinner class.

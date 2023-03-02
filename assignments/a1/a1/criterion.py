@@ -132,7 +132,6 @@ class HeterogeneousCriterion(HomogeneousCriterion):
 
 
 class LonelyMemberCriterion(Criterion):
-    # TODO: make this a child class of another class defined in this file
     """A criterion used to measure the quality of a group of students
     according to the group members' answers to a question.
 
