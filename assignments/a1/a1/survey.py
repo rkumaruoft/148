@@ -301,6 +301,9 @@ class Answer:
         """Return True iff this answer is a valid answer to <question>"""
         return question.validate_answer(self)
 
+    def __str__(self) -> str:
+        return f'{self.content}'
+
 
 class Survey:
     """A survey containing questions as well as criteria and weights used to
@@ -332,17 +335,23 @@ class Survey:
         This new survey should use a HomogeneousCriterion as a default criterion
         and should use 1 as a default weight.
         """
-        # TODO: implement this method!
+        self._questions = {}
+        self._criteria = {}
+        self._weights = {}
+        for ques in questions:
+            self._questions[ques.id] = ques
+            self._criteria[ques.id] = HomogeneousCriterion()
+            self._weights[ques.id] = 1
 
     def __len__(self) -> int:
         """Return the number of questions in this survey """
-        # TODO: implement this method!
+        return len(self._questions)
 
     def __contains__(self, question: Question) -> bool:
         """Return True iff there is a question in this survey with the same
         id as <question>.
         """
-        # TODO: implement this method!
+        return question.id in self._questions
 
     def __str__(self) -> str:
         """Return a string containing the string representation of all
@@ -350,11 +359,17 @@ class Survey:
 
         You can choose the precise format of this string.
         """
-        # TODO: implement this method!
+        ret_str = ''
+        for q in self._questions:
+            ret_str += str(q)
+        return ret_str
 
     def get_questions(self) -> list[Question]:
         """Return a list of all questions in this survey """
-        # TODO: implement this method!
+        ret_lst = []
+        for q in self._questions:
+            ret_lst.append(self._questions[q])
+        return ret_lst
 
     def _get_criterion(self, question: Question) -> Criterion:
         """Return the criterion associated with <question> in this survey.
@@ -362,7 +377,7 @@ class Survey:
         Preconditions:
             - <question>.id occurs in this survey
         """
-        # TODO: implement this method!
+        return self._criteria[question.id]
 
     def _get_weight(self, question: Question) -> int:
         """Return the weight associated with <question> in this survey.
@@ -370,7 +385,7 @@ class Survey:
         Preconditions:
             - <question>.id occurs in this survey
         """
-        # TODO: implement this method!
+        return self._weights[question.id]
 
     def set_weight(self, weight: int, question: Question) -> bool:
         """Set the weight associated with <question> to <weight> and
@@ -379,7 +394,10 @@ class Survey:
         If <question>.id does not occur in this survey, do not set the <weight>
         and return False instead.
         """
-        # TODO: implement this method!
+        if question.id not in self._questions:
+            return False
+        self._weights[question.id] = weight
+        return True
 
     def set_criterion(self, criterion: Criterion, question: Question) -> bool:
         """Set the criterion associated with <question> to <criterion> and
@@ -388,7 +406,10 @@ class Survey:
         If <question>.id does not occur in this survey, do not set the <weight>
         and return False instead.
         """
-        # TODO: implement this method!
+        if question.id not in self._questions:
+            return False
+
+        self._criteria[question.id] = criterion
 
     def score_students(self, students: list[Student]) -> float:
         """Return a quality score for <students> calculated based on their
@@ -413,7 +434,23 @@ class Survey:
             survey
             - len(students) > 0
         """
-        # TODO: implement this method!
+        if len(self) == 0:
+            return 0.0
+
+        try:
+            score_lst = []
+            for q in self.get_questions():
+                criteria = self._criteria[q.id]
+                weight = self._weights[q.id]
+                ans_lst = []
+                for student in students:
+                    if student.has_answer(q):
+                        ans_lst.append(student.get_answer(q))
+                score = weight * criteria.score_answers(q, ans_lst)
+                score_lst.append(score)
+            return sum(score_lst) / len(score_lst)
+        except InvalidAnswerError:
+            return 0.0
 
     def score_grouping(self, grouping: Grouping) -> float:
         """Return a score for <grouping> calculated based on the answers of
@@ -429,7 +466,14 @@ class Survey:
             - All students in the groups in <grouping> have an answer to
               all questions in this survey
         """
-        # TODO: implement this method!
+        if len(grouping) == 0:
+            return 0.0
+
+        score_lst = []
+        for grp in grouping.get_groups():
+            score_lst.append(self.score_students(grp.get_members()))
+
+        return sum(score_lst) / len(score_lst)
 
 
 if __name__ == '__main__':

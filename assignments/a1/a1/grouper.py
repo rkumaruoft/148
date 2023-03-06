@@ -160,7 +160,7 @@ class Group:
 
     === Private Attributes ===
     _members: a list of unique students in this group
-
+    _length: number of members in this group
     === Representation Invariants ===
     There is at least one member in this group
     No two students in _members have the same id
@@ -176,17 +176,20 @@ class Group:
         Preconditions:
             - len(members) >= 1
         """
-        # TODO: implement this method!
+        self._members = members.copy()
 
     def __len__(self) -> int:
         """Return the number of members in this group """
-        # TODO: implement this method!
+        return self._members.__len__()
 
     def __contains__(self, member: Student) -> bool:
         """Return True iff this group contains a member with the same id
         as <member>.
         """
-        # TODO: implement this method!
+        for mem in self._members:
+            if mem.id == member.id:
+                return True
+        return False
 
     def __str__(self) -> str:
         """Return a string containing the names of all members in this group
@@ -194,7 +197,10 @@ class Group:
 
         You can choose the precise format of this string.
         """
-        # TODO: implement this method!
+        ret_str = ''
+        for mem in self._members:
+            ret_str += f'{mem.Id} : {mem.name};'
+        return ret_str
 
     def get_members(self) -> list[Student]:
         """Return a list of members in this group.
@@ -202,7 +208,7 @@ class Group:
         This list should be a shallow copy of the self._members attribute.
         See the handout for more information about what a shallow copy is.
         """
-        # TODO: implement this method!
+        return self._members.copy()
 
 
 class Grouping:
@@ -219,11 +225,11 @@ class Grouping:
 
     def __init__(self) -> None:
         """Initialize a Grouping that contains zero groups. """
-        # TODO: implement this method!
+        self._groups = []
 
     def __len__(self) -> int:
         """Return the number of groups in this grouping """
-        # TODO: implement this method!
+        return self._groups.__len__()
 
     def __str__(self) -> str:
         """Return a multi-line string that includes the names of all the
@@ -232,14 +238,22 @@ class Grouping:
 
         You can choose the precise format of this string.
         """
-        # TODO: implement this method!
+        ret_str = ''
+        for group in self._groups:
+            ret_str += group.__str__()
+        return ret_str
 
     def add_group(self, group: Group) -> bool:
         """Add <group> to this grouping and return True iff the addition does
         not violate a representation invariant; otherwise leave this grouping
         unchanged and return False.
         """
-        # TODO: implement this method!
+        for student in group.get_members():
+            for grp in self._groups:
+                if student in grp:
+                    return False
+        self._groups.append(group)
+        return True
 
     def get_groups(self) -> list[Group]:
         """Return a list of all groups in this grouping.
@@ -247,7 +261,7 @@ class Grouping:
         This list should be a shallow copy of the self._groups attribute.
         See the handout for more information about what a shallow copy is.
         """
-        # TODO: implement this method!
+        return self._groups.copy()
 
 
 class Grouper:
@@ -313,7 +327,19 @@ class AlphaGrouper(Grouper):
         Preconditions:
             - <course> has more students than this Grouper's group_size
         """
-        # TODO: implement this method!
+        students = sort_students(list(course.get_students()), 'name')
+        ret_grouping = Grouping()
+        this_lst = []
+        while len(students) != 0:
+            this_lst.append(students.pop(0))
+            if len(this_lst) == self.group_size:
+                ret_grouping.add_group(Group(this_lst))
+                this_lst = []
+
+        if len(this_lst) != 0:
+            ret_grouping.add_group(Group(this_lst))
+
+        return ret_grouping
 
 
 class GreedyGrouper(Grouper):

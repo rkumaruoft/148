@@ -89,13 +89,13 @@ class HomogeneousCriterion(Criterion):
         if len(answers) == 1:
             return 1.0
 
-        total_similarity = 0
-        for i in range(len(answers)):
+        similarity_lst = []
+        for i in range(len(answers) - 1):
             for j in range(i+1, len(answers)):
-                total_similarity += question.get_similarity(answers[i],
-                                                            answers[j])
+                similarity_lst.append(question.get_similarity(answers[i],
+                                                              answers[j]))
 
-        return total_similarity/len(answers)
+        return sum(similarity_lst) / float(len(similarity_lst))
 
 
 class HeterogeneousCriterion(HomogeneousCriterion):
@@ -165,7 +165,7 @@ class LonelyMemberCriterion(Criterion):
         if len(answers) == 1:
             return 1.0
 
-        for i in range(len(answers)):
+        for i in range(len(answers) - 1):
             is_unique = True
             for j in range(i + 1, len(answers)):
                 if question.get_similarity(answers[i],

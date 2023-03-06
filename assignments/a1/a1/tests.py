@@ -5,6 +5,7 @@ from pytest import *
 from course import *
 from survey import *
 from criterion import *
+from grouper import Group, Grouping
 
 
 ###############################################################################
@@ -119,7 +120,7 @@ class TestQuestionClass:
     def test_get_similarity_multiple_choice(self) -> None:
         a = Answer('abc')
         b = Answer('abc')
-        ques = MultipleChoiceQuestion(0,    'How cold is it',
+        ques = MultipleChoiceQuestion(0, 'How cold is it',
                                       ['Very', 'Not at all', 'It\'s okay'])
         assert (ques.get_similarity(a, b)) == 1.0
 
@@ -154,7 +155,7 @@ class TestAnswerClass:
 # Task 6 Test cases
 ###############################################################################
 class TestCriterionClass:
-    def test_single_answer(self) -> None:
+    def test_single_answer_homogenous(self) -> None:
         """
         Test that the score_answer returns 1.0 for only one valid answer in
         homogeneous criterion
@@ -176,17 +177,80 @@ class TestCriterionClass:
         criterion = HeterogeneousCriterion()
         assert criterion.score_answers(ques, [a]) == 0.0
 
+
 ###############################################################################
 # Task 7 Test cases
 ###############################################################################
-# TODO: Add your test cases below
+class TestGroupClass:
+    def test_group_len(self):
+        """
+        Test that __len__ returns the correct length of the members
+        list in  the group
+        """
+        members = [Student(0, 'John'), Student(1, 'Jen'), Student(2, 'Janet')]
+        group = Group(members)
+        assert len(group) == len(members)
+
+    def test_group_contains(self):
+        """
+        Test that __contains__ returns True when a student is
+        present in the group
+        """
+        members = [Student(0, 'John'), Student(1, 'Jen')]
+        janet = Student(2, 'Janet')
+        members.append(janet)
+        group = Group(members)
+        assert janet in group
+
+    def test_group_get_members(self):
+        """
+        Test that get_members return a shallow copy of the original list
+        """
+        members = [Student(0, 'John'), Student(1, 'Jen')]
+        group = Group(members)
+        ret_members = group.get_members()
+        janet = Student(2, 'Janet')
+        ret_members.append(janet)
+        assert janet not in group.get_members()
 
 
 ###############################################################################
 # Task 8 Test cases
 ###############################################################################
-# TODO: Add your test cases below
+class TestGroupingClass:
+    def test_add_group_true(self):
+        """
+        Test that the add_group method adds a valid group to the grouping class
+        """
+        grouper = Grouping()
+        group1 = Group([Student(0, 'John'),
+                        Student(1, 'Jen'),
+                        Student(2, 'Janet')])
+        group2 = Group([Student(3, 'Mike'),
+                        Student(4, 'Michael'),
+                        Student(5, 'Mason')])
+        grouper.add_group(group1)
+        grouper.add_group(group2)
+        ret_groups = grouper.get_groups()
+        assert group1 in ret_groups and group2 in ret_groups
 
+    def test_add_group_false(self):
+        """
+        Test that add_group does not add a group which has the same member
+        already present in another group in the grouping
+        """
+        grouping = Grouping()
+        steve = Student(6, 'Steve')
+        group1 = Group([Student(0, 'John'),
+                        Student(1, 'Jen'),
+                        Student(2, 'Janet'), steve])
+        group2 = Group([Student(3, 'Mike'),
+                        Student(4, 'Michael'),
+                        Student(5, 'Mason'), steve])
+        grouping.add_group(group1)
+        grouping.add_group(group2)
+        ret_groups = grouping.get_groups()
+        assert group1 in ret_groups and group2 not in ret_groups
 
 ###############################################################################
 # Task 9 Test cases
