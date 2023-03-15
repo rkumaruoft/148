@@ -199,7 +199,7 @@ class Group:
         """
         ret_str = ''
         for mem in self._members:
-            ret_str += f'{mem.Id} : {mem.name};'
+            ret_str += f'{mem.id} : {mem.name};'
         return ret_str
 
     def get_members(self) -> list[Student]:
@@ -307,7 +307,6 @@ class AlphaGrouper(Grouper):
     === Representation Invariants ===
     group_size > 1
     """
-
     group_size: int
 
     def make_grouping(self, course: Course, survey: Survey) -> Grouping:
@@ -384,7 +383,19 @@ class GreedyGrouper(Grouper):
         Preconditions:
             - <course> has more students than this Grouper's group_size
         """
-        # TODO: implement this method!
+        students = sort_students(list(course.get_students()), 'id')
+        ret_grouping = Grouping()
+
+        while len(students) != 0:
+            first_student = students.pop(0)
+            this_grp = [first_student]
+            while students and len(this_grp) < self.group_size:
+                to_add = find_best_addition_to_group(survey, this_grp, students)
+                this_grp.append(to_add)
+                students.remove(to_add)
+            ret_grouping.add_group(Group(this_grp))
+
+        return ret_grouping
 
 
 class SimulatedAnnealingGrouper(Grouper):
@@ -399,13 +410,15 @@ class SimulatedAnnealingGrouper(Grouper):
         smaller than group_size.
 
     === Private Attributes ===
-    TODO: Describe any private attributes you create here
-
+    _iterations: number of iterations the algorithm is supposed to run
+    _initial_temperature: the initial temperature to be provided to this
+                         algorithm
     === Representation Invariants ===
-    TODO: Add any additional representation invariants here
     group_size > 1
     """
     group_size: int
+    _iterations: int
+    _initial_temperature: float
 
     def __init__(self,
                  group_size: int,
@@ -413,9 +426,11 @@ class SimulatedAnnealingGrouper(Grouper):
                  initial_temperature: float = 1) -> None:
         """Initialize this simulated annealing grouper (that runs for
         <iterations> iterations and begins with temperature
-        <intitial_temperature>) to create groups of size <group_size>.
+        <initial_temperature>) to create groups of size <group_size>.
         """
-        # TODO: implement this method!
+        Grouper.__init__(self, group_size)
+        self._iterations = iterations
+        self._initial_temperature = initial_temperature
 
     def make_grouping(self, course: Course, survey: Survey) -> Grouping:
         """Group students in <course> using the Simulated Annealing algorithm.
@@ -480,7 +495,22 @@ class SimulatedAnnealingGrouper(Grouper):
         Preconditions:
             - <course> has more students than this Grouper's group_size
         """
-        # TODO: implement this method!
+        students = course.get_students()
+        grp_lst = slice_list(list(students), self.group_size)
+        best = total_score(survey, grp_lst)
+        for i in range(self._iterations):
+            copy_grp = deepcopy(grp_lst)
+            random_swap(copy_grp, i)
+            this_score = total_score(survey, copy_grp)
+            temp = (self._initial_temperature
+                    * (1 - (i / (self._iterations - 1))))
+            if accept(best, this_score, temp, i):
+                best = this_score
+                grp_lst = copy_grp
+        ret_grouping = Grouping()
+        for grp in grp_lst:
+            ret_grouping.add_group(Group(grp))
+        return ret_grouping
 
 
 if __name__ == '__main__':

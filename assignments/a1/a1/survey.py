@@ -63,7 +63,7 @@ class Question:
     def validate_answer(self, answer: Answer) -> bool:
         """Return True iff <answer> is a valid answer to this question.
         """
-        pass
+        raise NotImplementedError
 
     def get_similarity(self, answer1: Answer, answer2: Answer) -> float:
         """Return a float between 0.0 and 1.0 indicating how similar two
@@ -72,7 +72,7 @@ class Question:
         Preconditions:
             - <answer1> and <answer2> are both valid answers to this question
         """
-        pass
+        raise NotImplementedError
 
 
 class MultipleChoiceQuestion(Question):
@@ -192,8 +192,8 @@ class NumericQuestion(Question):
         Preconditions:
             - <answer1> and <answer2> are both valid answers to this question
         """
-        return 1.0 - (abs(answer1.content - answer2.content) /
-                      (self._max - self._min))
+        return 1.0 - (abs(answer1.content - answer2.content)
+                      / (self._max - self._min))
 
 
 class YesNoQuestion(MultipleChoiceQuestion):
@@ -205,16 +205,12 @@ class YesNoQuestion(MultipleChoiceQuestion):
     text: the text of this question
 
     === Private Attributes ===
-    _answer_set : set of answers for a YesNo question
     === Representation Invariants ===
     text is not the empty string
     """
-    _answer_set: set
-
     def __init__(self, id_: int, text: str) -> None:
         """Initialize a question with the text <text> and id <id>.
         """
-        self._answer_set = {True, False}
         MultipleChoiceQuestion.__init__(self, id_, text, ['Yes', 'No'])
 
     def validate_answer(self, answer: Answer) -> bool:
@@ -223,7 +219,7 @@ class YesNoQuestion(MultipleChoiceQuestion):
         An answer is valid if its content is one of the answer options for this
         question.
         """
-        return answer.content in self._answer_set
+        return isinstance(answer.content, bool)
 
 
 class CheckboxQuestion(MultipleChoiceQuestion):
@@ -246,16 +242,16 @@ class CheckboxQuestion(MultipleChoiceQuestion):
             * It has no duplicate entries.
             * Every item in it is one of the answer options for this question.
         """
-        if isinstance(answer.content, list):
-            this_set = set(answer.content)
-            if len(this_set) != len(answer.content) or len(answer.content) == 0:
-                return False
-            else:
-                for ans in answer.content:
-                    if ans not in self._options:
-                        return False
-        else:
+        if not isinstance(answer.content, list):
             return False
+
+        this_set = set(answer.content)
+        if len(this_set) != len(answer.content) or len(answer.content) == 0:
+            return False
+        else:
+            for ans in answer.content:
+                if ans not in self._options:
+                    return False
         return True
 
     def get_similarity(self, answer1: Answer, answer2: Answer) -> float:
@@ -410,6 +406,7 @@ class Survey:
             return False
 
         self._criteria[question.id] = criterion
+        return True
 
     def score_students(self, students: list[Student]) -> float:
         """Return a quality score for <students> calculated based on their
@@ -444,8 +441,7 @@ class Survey:
                 weight = self._weights[q.id]
                 ans_lst = []
                 for student in students:
-                    if student.has_answer(q):
-                        ans_lst.append(student.get_answer(q))
+                    ans_lst.append(student.get_answer(q))
                 score = weight * criteria.score_answers(q, ans_lst)
                 score_lst.append(score)
             return sum(score_lst) / len(score_lst)

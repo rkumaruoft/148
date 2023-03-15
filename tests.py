@@ -1,6 +1,7 @@
 from typing import Any
 from copy import deepcopy, copy
 
+
 class Stack:
     """A last-in-first-out (LIFO) stack of items.
     Stores data in a last-in, first-out order. When removing an item from the

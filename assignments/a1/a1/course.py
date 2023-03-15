@@ -101,7 +101,9 @@ class Student:
         """Return this student's answer to the question <question>.
         Return None if this student does not have an answer to <question>
         """
-        return self._answers[question.id]
+        if question.id in self._answers:
+            return self._answers[question.id]
+        return None
 
 
 class Course:
@@ -134,10 +136,18 @@ class Course:
         If adding any student would violate a representation invariant,
         do not add any of the students in <students> to the course.
         """
-        for student in students:
-            if student.id not in self._student_ids:
-                self._student_ids.append(student.id)
-                self.students.append(student)
+        for i in range(len(students) - 1):
+            for j in range(i + 1, len(students)):
+                if students[i].id == students[j].id:
+                    return None
+        for new_student in students:
+            if not new_student.name:
+                return None
+            for student in self.students:
+                if new_student.id == student.id:
+                    return None
+        self.students.extend(students[:])
+        return None
 
     def all_answered(self, survey: Survey) -> bool:
         """Return True iff all the students enrolled in this course have a

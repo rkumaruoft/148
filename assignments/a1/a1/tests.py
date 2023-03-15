@@ -1,11 +1,10 @@
 # You may need to import pytest in order to run your tests.
 # You are free to import hypothesis and use hypothesis for testing.
 # This file will not be graded for style with PythonTA
-from pytest import *
 from course import *
 from survey import *
 from criterion import *
-from grouper import Group, Grouping
+from grouper import Group, Grouping, Grouper, AlphaGrouper, GreedyGrouper
 
 
 ###############################################################################
@@ -43,6 +42,28 @@ class TestStudentCLass:
         student.set_answer(ques, ans)
         assert student.has_answer(ques)
 
+    def test_has_answer_no_answer(self) -> None:
+        student = Student(0, 'Helen')
+        question = MultipleChoiceQuestion(0, 'how?', ['A', 'B', 'C'])
+        assert not student.has_answer(question)
+
+    def test_set_answer_first_set(self) -> None:
+        student = Student(0, 'Helen')
+        question = MultipleChoiceQuestion(0, 'how?', ['A', 'B', 'C'])
+        answer = Answer('A')
+        student.set_answer(question, answer)
+        assert student.get_answer(question) == answer
+
+    def test_set_answer_reset(self) -> None:
+        student = Student(0, 'Helen')
+        question = MultipleChoiceQuestion(0, 'how?', ['A', 'B', 'C'])
+        answer1 = Answer('A')
+        answer2 = Answer('B')
+        student.set_answer(question, answer1)
+        assert student.get_answer(question) == answer1
+        student.set_answer(question, answer2)
+        assert student.get_answer(question) == answer2
+
 
 ###############################################################################
 # Task 3 Test cases
@@ -57,14 +78,47 @@ class TestCourseClass:
         student3 = Student(1, "Mike")
         course = Course('CSC148')
         course.enroll_students([student1, student2, student3])
-        assert student2 not in course.students
+        assert len(course.students) == 0
 
     def test_all_answered(self) -> None:
         """
         Test that all_answered returns true when a student
         has all the answers for a survey
         """
-        # TODO: implement this later
+        cs = Course('CSC148')
+        q1 = MultipleChoiceQuestion(1, 'why?', ['a', 'b'])
+        q2 = NumericQuestion(2, 'what?', -2, 4)
+        q1_answer = Answer('a')
+        q2_answer = Answer(1)
+        questions = [q1, q2]
+        happy_survey = Survey(questions)
+        helen = Student(0, 'Helen')
+        tammy = Student(0, 'Tammy')
+        students = [helen, tammy]
+        cs.enroll_students(students)
+        helen.set_answer(q1, q1_answer)
+        tammy.set_answer(q1, q1_answer)
+        helen.set_answer(q2, q2_answer)
+        tammy.set_answer(q2, q2_answer)
+        assert cs.all_answered(happy_survey)
+
+    def test_all_answered_invalid_answer(self) -> None:
+        cs = Course('CSC148')
+        q1 = MultipleChoiceQuestion(1, 'why?', ['a', 'b'])
+        q2 = NumericQuestion(2, 'what?', -2, 4)
+        q1_answer = Answer('a')
+        q2_answer = Answer(1)
+        questions = [q1, q2]
+        happy_survey = Survey(questions)
+        helen = Student(0, 'Helen')
+        tammy = Student(1, 'Tammy')
+        students = [helen, tammy]
+        cs.enroll_students(students)
+        helen.set_answer(q1, q1_answer)
+        tammy.set_answer(q1, q1_answer)
+        helen.set_answer(q2, q2_answer)
+        tammy.set_answer(q2, q1_answer)  # invalid
+        assert not cs.all_answered(happy_survey)
 
     def test_get_students(self) -> None:
         """
@@ -91,6 +145,11 @@ class TestQuestionClass:
         ans = Answer(True)
         ques = YesNoQuestion(0, 'Earth is round')
         assert ques.validate_answer(ans)
+
+    def test_validate_answer_invalid(self) -> None:
+        question = YesNoQuestion(0, 'happy?')
+        answer = Answer(1)
+        assert not question.validate_answer(answer)
 
     def test_get_similarity_1(self) -> None:
         """
@@ -125,6 +184,15 @@ class TestQuestionClass:
         assert (ques.get_similarity(a, b)) == 1.0
 
 
+class TestNumericQuestion:
+    def test_get_similarity(self) -> None:
+        question = NumericQuestion(0, 'how happy?', 0, 4)
+        answer = Answer(2)
+        answer1 = Answer(4)
+        assert question.get_similarity(answer, answer1) == 0.5
+
+
+
 ###############################################################################
 # Task 5 Test cases
 ###############################################################################
@@ -149,6 +217,11 @@ class TestAnswerClass:
                                 ['Planet', 'Flat', 'Round', 'Star'])
         ans = Answer(['Planet', 'Round'])
         assert ans.is_valid(ques)
+
+    def test_is_valid_invalid(self) -> None:
+        question = CheckboxQuestion(0, 'happy?', ['a', 'b'])
+        answer = Answer(1)
+        assert not answer.is_valid(question)
 
 
 ###############################################################################
@@ -177,6 +250,24 @@ class TestCriterionClass:
         criterion = HeterogeneousCriterion()
         assert criterion.score_answers(ques, [a]) == 0.0
 
+    def test_score_answers_all_same(self) -> None:
+        q1 = NumericQuestion(0, 'how much?', 0, 10)
+        answer1 = Answer(0)
+        answer2 = Answer(0)
+        answer3 = Answer(0)
+        answers = [answer1, answer2, answer3]
+        criteria = HomogeneousCriterion()
+        assert criteria.score_answers(q1, answers) == 1.0
+
+    def test_score_answers(self) -> None:
+        q1 = NumericQuestion(0, 'how much?', 0, 10)
+        answer1 = Answer(0)
+        answer2 = Answer(5)
+        answer3 = Answer(0)
+        answers = [answer1, answer2, answer3]
+        criteria = HomogeneousCriterion()
+        assert criteria.score_answers(q1, answers) == 0.6666666666666666
+
 
 ###############################################################################
 # Task 7 Test cases
@@ -201,6 +292,16 @@ class TestGroupClass:
         members.append(janet)
         group = Group(members)
         assert janet in group
+
+    def test_group_not_contains(self):
+        """
+        Test that __contains__ returns False when a student is not
+        present in the group
+        """
+        members = [Student(0, 'John'), Student(1, 'Jen')]
+        janet = Student(2, 'Janet')
+        group = Group(members)
+        assert janet not in group
 
     def test_group_get_members(self):
         """
@@ -252,13 +353,228 @@ class TestGroupingClass:
         ret_groups = grouping.get_groups()
         assert group1 in ret_groups and group2 not in ret_groups
 
+
 ###############################################################################
 # Task 9 Test cases
 ###############################################################################
-# TODO: Add your test cases below
+class TestSurvey:
+    def test_get_question(self) -> None:
+        q1 = YesNoQuestion(0, 'how?')
+        q2 = YesNoQuestion(1, 'what?')
+        q3 = YesNoQuestion(2, 'when?')
+        s = Survey([q1, q2, q3])
+        assert s.get_questions() == [q1, q2, q3]
+
+    def test_get_criterion(self) -> None:
+        q1 = YesNoQuestion(0, 'how?')
+        q2 = YesNoQuestion(1, 'what?')
+        q3 = YesNoQuestion(2, 'when?')
+        s = Survey([q1, q2, q3])
+        assert isinstance(s._get_criterion(q1), HomogeneousCriterion)
+        s.set_criterion(HeterogeneousCriterion(), q1)
+        assert isinstance(s._get_criterion(q1), HeterogeneousCriterion)
+
+    def test_get_weight(self) -> None:
+        q1 = YesNoQuestion(0, 'how?')
+        s = Survey([q1])
+        assert s._get_weight(q1) == 1
+        s.set_weight(2, q1)
+        assert s._get_weight(q1) == 2
+
+    def test_set_weight(self) -> None:
+        q1 = YesNoQuestion(0, 'how?')
+        q2 = YesNoQuestion(1, 'when?')
+        s = Survey([q1, q2])
+        s.set_weight(2, q2)
+        assert s._get_weight(q2) == 2
+
+    def test_set_criterion(self) -> None:
+        q1 = YesNoQuestion(0, 'how?')
+        s = Survey([q1])
+        s.set_criterion(HeterogeneousCriterion(), q1)
+        assert isinstance(s._get_criterion(q1), HeterogeneousCriterion)
+
+    def test_score_students(self):
+        q1 = YesNoQuestion(0, 'how?')
+        q2 = YesNoQuestion(1, 'when?')
+        q3 = YesNoQuestion(2, 'how?')
+        true_answer = Answer(True)
+        false_answer = Answer(False)
+        s = Survey([q1, q2, q3])
+        s.set_criterion(LonelyMemberCriterion(), q1)
+        helen = Student(0, 'Helen')
+        tammy = Student(1, 'Tammy')
+        amy = Student(2, 'Amy')
+        helen.set_answer(q1, true_answer)
+        helen.set_answer(q2, true_answer)
+        helen.set_answer(q3, true_answer)
+        tammy.set_answer(q1, true_answer)
+        tammy.set_answer(q2, true_answer)
+        tammy.set_answer(q3, true_answer)
+        amy.set_answer(q1, false_answer)
+        amy.set_answer(q2, true_answer)
+        amy.set_answer(q3, true_answer)
+        assert round(s.score_students([helen, tammy, amy]), 2) == 0.67
+
+    def test_score_grouping(self) -> None:
+        q1 = YesNoQuestion(0, 'how?')
+        q2 = YesNoQuestion(1, 'when?')
+        q3 = YesNoQuestion(2, 'how?')
+        true_answer = Answer(True)
+        false_answer = Answer(False)
+        s = Survey([q1, q2, q3])
+        s.set_criterion(LonelyMemberCriterion(), q1)
+        helen = Student(0, 'Helen')
+        tammy = Student(1, 'Tammy')
+        amy = Student(2, 'Amy')
+        jen = Student(3, 'Jen')
+        helen.set_answer(q1, true_answer)
+        helen.set_answer(q2, true_answer)
+        helen.set_answer(q3, true_answer)
+        tammy.set_answer(q1, true_answer)
+        tammy.set_answer(q2, true_answer)
+        tammy.set_answer(q3, true_answer)
+        amy.set_answer(q1, true_answer)
+        amy.set_answer(q2, true_answer)
+        amy.set_answer(q3, true_answer)
+        jen.set_answer(q1, true_answer)
+        jen.set_answer(q2, true_answer)
+        jen.set_answer(q3, true_answer)
+        grouping = Grouping()
+        grouping.add_group(Group([
+            helen, amy]))
+        grouping.add_group(Group([
+            tammy, jen
+        ]))
+        score = s.score_grouping(grouping)
+        assert score == 1.0
+
 
 
 ###############################################################################
 # Task 10 Test cases
 ###############################################################################
-# TODO: Add your test cases below
+class TestGrouperClass:
+    def test_alpha_grouper(self) -> None:
+        """
+        Test that make_grouping of the alpha grouper class makes correct groups
+        based on the alphabetical order of names of the students
+        """
+        grouper = AlphaGrouper(2)
+        survey = Survey(get_questions_list())
+        course = Course('CSC')
+        students = get_students_list()
+        course.enroll_students(students)
+        grouping = grouper.make_grouping(course, survey)
+        test_grouping = Grouping()
+        test_grouping.add_group(
+            Group([
+                Student(3, 'Anna'),
+                Student(5, 'Daliyah')]))
+        test_grouping.add_group(
+            Group([
+                Student(4, 'Gene'),
+                Student(1, 'Jen')]))
+        test_grouping.add_group(
+            Group([
+                Student(6, 'Louise'),
+                Student(0, 'Mabel')]))
+        test_grouping.add_group(
+            Group([
+                Student(2, 'Sanjay'),
+                Student(7, 'Tina')]))
+        ret_groups = grouping.get_groups()
+        test_groups = test_grouping.get_groups()
+        for i in range(len(ret_groups)):
+            s = ret_groups[i].get_members()
+            for j in range(len(s)):
+                assert s[j].id == test_groups[i].get_members()[j].id
+
+    def test_alpha_grouper_odd(self) -> None:
+        """
+        Test that make_grouping of the alpha grouper class makes correct groups
+        based on the alphabetical order of names of the students when the group
+        size is odd
+        """
+        grouper = AlphaGrouper(3)
+        survey = Survey(get_questions_list())
+        course = Course('CSC')
+        students = get_students_list()
+        course.enroll_students(students)
+        grouping = grouper.make_grouping(course, survey)
+        test_grouping = Grouping()
+        test_grouping.add_group(
+            Group([
+                Student(3, 'Anna'),
+                Student(5, 'Daliyah'),
+                Student(4, 'Gene')]))
+        test_grouping.add_group(
+            Group([
+                Student(1, 'Jen'),
+                Student(6, 'Louise'),
+                Student(0, 'Mabel')]))
+        test_grouping.add_group(
+            Group([
+                Student(2, 'Sanjay'),
+                Student(7, 'Tina')]))
+        ret_groups = grouping.get_groups()
+        test_groups = test_grouping.get_groups()
+        for i in range(len(ret_groups)):
+            s = ret_groups[i].get_members()
+            for j in range(len(s)):
+                assert s[j].id == test_groups[i].get_members()[j].id
+
+    def test_greedy_grouper(self) -> None:
+        q = get_questions_list()
+        s1 = Student(0, 'John')
+        s1.set_answer(q[0], Answer('Easy'))
+        s1.set_answer(q[1], Answer('Yes'))
+        s1.set_answer(q[2], Answer(True))
+        s1.set_answer(q[3], Answer(10))
+        s2 = Student(2, 'Lia')
+        s2.set_answer(q[0], Answer(['Complicated', 'Easy']))
+        s2.set_answer(q[1], Answer('Yes'))
+        s2.set_answer(q[2], Answer(True))
+        s2.set_answer(q[3], Answer(10))
+        s3 = Student(1, 'Millie')
+        s3.set_answer(q[0], Answer('Huh'))
+        s3.set_answer(q[1], Answer('Maybe'))
+        s3.set_answer(q[2], Answer(False))
+        s3.set_answer(q[3], Answer(100))
+        course = Course('CSC')
+        course.enroll_students([s1, s2, s3])
+        grouper = GreedyGrouper(2)
+        grouping = grouper.make_grouping(course, Survey(q))
+        test_grouping = Grouping()
+        test_grouping.add_group(Group([s1, s2]))
+        test_grouping.add_group(Group([s3]))
+
+        ret_groups = grouping.get_groups()
+        test_groups = test_grouping.get_groups()
+        for i in range(len(ret_groups)):
+            s = ret_groups[i].get_members()
+            for j in range(len(s)):
+                assert s[j].id == test_groups[i].get_members()[j].id
+
+
+# helper methods
+def get_questions_list() -> list[Question]:
+    return [
+        CheckboxQuestion(0, 'What is life?',
+                         ['I don\'t know', 'Complicated', 'Easy']),
+        MultipleChoiceQuestion(1, 'Are you alive?',
+                               ['Yes', 'I think so', 'No']),
+        YesNoQuestion(2, 'Am I alive?'),
+        NumericQuestion(3, 'How many fingers do you have?', 0, 10)
+    ]
+
+
+def get_students_list() -> list[Student]:
+    return [Student(0, 'Mabel'),
+            Student(1, 'Jen'),
+            Student(2, 'Sanjay'),
+            Student(3, 'Anna'),
+            Student(4, 'Gene'),
+            Student(5, 'Daliyah'),
+            Student(6, 'Louise'),
+            Student(7, 'Tina')]

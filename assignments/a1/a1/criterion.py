@@ -61,6 +61,7 @@ class HomogeneousCriterion(Criterion):
 
     This criterion gives a higher score to answers that are more similar.
     """
+
     def score_answers(self, question: Question, answers: list[Answer]) -> float:
         """Return a score between 0.0 and 1.0 indicating how similar the
         answers in <answers> are.
@@ -91,11 +92,13 @@ class HomogeneousCriterion(Criterion):
 
         similarity_lst = []
         for i in range(len(answers) - 1):
-            for j in range(i+1, len(answers)):
+            for j in range(i + 1, len(answers)):
                 similarity_lst.append(question.get_similarity(answers[i],
                                                               answers[j]))
-
-        return sum(similarity_lst) / float(len(similarity_lst))
+        if len(similarity_lst) > 0:
+            return sum(similarity_lst) / float(len(similarity_lst))
+        else:
+            return 0.0
 
 
 class HeterogeneousCriterion(HomogeneousCriterion):
